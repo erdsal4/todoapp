@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useLayoutEffect, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Button } from "react-native";
 import CheckBox from '@react-native-community/checkbox';
 import { useFocusEffect } from '@react-navigation/native';
 import globStyles from './Styles';
-import { getTodos } from './HandleTodo';
+import { getAllTodos, getCurrentTodos, markTodosComplete } from './HandleTodo';
 
 
 const Todos = ({ navigation }) => {
     const [checked, setChecked] = useState([]); // initialize state to the number of todos retreived
     const [todos, setTodos] = useState([]);
+    const [isMarkCompleteVisible, setMarkCompleteVisible] = useState(false);
 
     useFocusEffect(
-        React.useCallback(() => {            
+        React.useCallback(() => {
             let isActive = true;
             const fetchTodos = async () => {
                 try {
-                    const response = await getTodos();
+                    const response = await getCurrentTodos();
                     const json = await JSON.parse(response);
                     if (isActive) {
                         setTodos(json.todos);
@@ -23,7 +24,7 @@ const Todos = ({ navigation }) => {
                         setChecked(checked);
                     }
                 } catch (err) {
-                   console.error(err);
+                    console.error(err);
                 }
             }
 
@@ -35,18 +36,43 @@ const Todos = ({ navigation }) => {
         }, [])
     );
 
+    const handleMarkComplete = async function () {
+
+        const todoIdsToBeMarkedComplete = checked
+            .map((checked, idx) => checked ? idx : -1)
+            .filter(i => i !== -1)
+            .map((idx) => todos[idx].id);
+
+        // send them to server
+        try {
+            const _ = await markTodosComplete(todoIdsToBeMarkedComplete);
+            console.log('update successful');
+        } catch (err) {
+            console.log(err);
+        }
+        // update todos on screen
+        try {
+            const response = await getCurrentTodos();
+            const json = await JSON.parse(response);
+            setTodos(json.todos);
+            const checked = json.todos.map(_ => false);
+            setChecked(checked);
+            setMarkCompleteVisible(false);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
     const CustCheckBox = ({ index }) => {
         return (
             <View style={styles.checkboxContainer}>
                 <CheckBox
                     value={checked[index]}
+                    tintColors={{ true: '#F15927' }}
                     onValueChange={() => {
                         let updatedList = [...checked];
-                        if (!checked[index]) {
-                            updatedList[index] = true
-                        } else {
-                            updatedList[index] = false
-                        }
+                        updatedList[index] = !checked[index];
+                        setMarkCompleteVisible(updatedList.includes(true));
                         setChecked(updatedList);
                     }}
                     style={[globStyles.text]}
@@ -64,6 +90,11 @@ const Todos = ({ navigation }) => {
 
     return (
         <View style={globStyles.container}>
+            {isMarkCompleteVisible ?
+                <View style={styles.markCompleteButton}>
+                    <Button color="#696969" onPress={handleMarkComplete} title="Mark as Complete" />
+                </View>
+                : ''}
             <View>
                 <FlatList
                     data={todos}
@@ -73,13 +104,12 @@ const Todos = ({ navigation }) => {
             </View>
             <TouchableOpacity
                 style={globStyles.button}
-                onPress={() => navigation.navigate('AddTodo', {itemId: todos[todos.length - 1].id + 1})}
+                onPress={() => navigation.navigate('AddTodo', { itemId: todos[todos.length - 1].id + 1 })}
             >
                 <Text style={globStyles.buttonText}>New</Text>
             </TouchableOpacity>
         </View>
-
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -96,6 +126,9 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
     },
+    markCompleteButton: {
+        alignSelf: 'flex-end'
+    }
 });
 
 export default Todos;

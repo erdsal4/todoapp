@@ -1,19 +1,23 @@
-const RNFS = require('react-native-fs');
-const path = RNFS.DocumentDirectoryPath + '/data.json';
+// import * as ScopedStorage from "react-native-scoped-storage"
+const dir = "content://com.android.externalstorage.documents/tree/primary%3Amydata/document/primary%3Amydata";
+const path = "content://com.android.externalstorage.documents/tree/primary%3Amydata/document/primary%3Amydata%2Fdata.json";
+const localpath = 'data.json';
+var fs = require('fs/promises');
 
-export function getAllTodos() {
+function getTodos() {
     /* const data = {"todos":[{"id":1,"title":"food stuff","description":"Prepare dinner","urgency":"1","due":"2022-08-19","completed":true},{"id":2,"title":"take a walk","description":"go out when you come home from the office","urgency":"3","due":"2022-08-25","completed":false},{"id":3,"title":"go shopping","description":"buy eggs, potatoes, tomatoes, olive oil, wet wipes.","urgency":"2","due":"2022-08-23","completed":false},{"id":4,"title":"take a walk","description":"go out when you come home from the office","urgency":"3","due":"2022-08-25","completed":false},{"id":5,"title":"take a walk","description":"go out when you come home from the office","urgency":"3","due":"2022-08-25","completed":false},{"id":6,"title":"take a walk","description":"go out when you come home from the office","urgency":"3","due":"2022-08-25","completed":false}]};
-    RNFS.writeFile(path,JSON.stringify(data))
-    .then((success) => console.log("DATA added"))
-    .catch((err) => console.log(err.message)); */
+    ScopedStorage.writeFile(dir,JSON.stringify(data), 'data.json'); */
 
     // read contents of file, make it async
     return new Promise(function (resolve) {
+        // let dir = await ScopedStorage.openDocumentTree(true);
         setTimeout(async function () {
             let response;
             try {
-                response = await RNFS.readFile(path);
+                response = await fs.readFile(localpath);
                 response = JSON.parse(response);
+                const todos = response.todos.filter((el) => !el.completed);
+                response.todos = todos;
                 console.log(response);
             } catch (er) {
                 console.log(er);
@@ -24,30 +28,17 @@ export function getAllTodos() {
     });
 }
 
+function addNewTodo(todo) {
 
-export async function getCurrentTodos() {
-    let allTodos;
-    try {
-        allTodos = await getAllTodos();
-        allTodos = JSON.parse(allTodos);
-        const todos = allTodos.todos.filter((el) => !el.completed);
-        allTodos.todos = todos;
-    } catch (err) {
-        console.log(err)
-    }
-    return JSON.stringify(allTodos);
-}
-
-export function addNewTodo(todo) {
-
+    // get file writer, make it async
     return new Promise(function (resolve, reject) {
         setTimeout(async function () {
-            let allTodos = await getAllTodos();
-            allTodos = JSON.parse(allTodos);
-            allTodos['todos'].push(todo);
-            const newTodos = JSON.stringify(allTodos);
+            let currentTodos = await getTodos();
+            currentTodos = JSON.parse(currentTodos);
+            currentTodos['todos'].push(todo);
+            const newTodos = JSON.stringify(currentTodos);
             try {
-                RNFS.writeFile(path, newTodos)
+                ScopedStorage.writeFile(path, newTodos)
                     .then(resolve('success'))
                     .catch(reject('could not add new data'));
             } catch (er) {
@@ -57,23 +48,27 @@ export function addNewTodo(todo) {
     });
 }
 
-export function markTodosComplete(todoIds) {
+function markTodosComplete(todoIds) {
 
     return new Promise(function (resolve, reject) {
         setTimeout(async function () {
-            let allTodos = await getAllTodos();
-            allTodos = await JSON.parse(allTodos);
-            allTodos["todos"]
+            let currentTodos = await getTodos();
+            currentTodos = await JSON.parse(currentTodos);
+            console.log('currently');
+            console.log(currentTodos);
+            console.log('updated ids');
+            console.log(todoIds);
+            currentTodos["todos"]
                 .forEach(el => {
                     if (todoIds.includes(el.id)) {
                         el["completed"] = true;
                     }
                 });
             console.log('updatedtodos');
-            console.log(allTodos);
-            const newTodos = JSON.stringify(allTodos);
+            console.log(currentTodos);
+            const newTodos = JSON.stringify(currentTodos);
             try {
-                RNFS.writeFile(path,newTodos)
+                fs.writeFile(localpath,newTodos)
                     .then(resolve('success'))
                     .catch(reject('could not update data'));
             } catch (er) {
@@ -82,3 +77,14 @@ export function markTodosComplete(todoIds) {
         }, 100)
     });
 }
+
+async function main() {
+    const stat = await markTodosComplete([3,4]);
+    console.log(stat);
+    const response = await getTodos();
+    const json = await JSON.parse(response);
+    console.log("jsonn")
+    console.log(json);
+}
+
+main();
