@@ -7,7 +7,6 @@ export function getAllTodos() {
     .then((success) => console.log("DATA added"))
     .catch((err) => console.log(err.message)); */
 
-    // read contents of file, make it async
     return new Promise(function (resolve) {
         setTimeout(async function () {
             let response;
@@ -44,6 +43,11 @@ export function addNewTodo(todo) {
         setTimeout(async function () {
             let allTodos = await getAllTodos();
             allTodos = JSON.parse(allTodos);
+            
+            const lastID = allTodos.todos[allTodos.todos.length - 1].id;
+            todo['id'] = lastID+1;
+            todo['completed'] = false;
+            
             allTodos['todos'].push(todo);
             const newTodos = JSON.stringify(allTodos);
             try {

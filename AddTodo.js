@@ -12,7 +12,7 @@ const dateOptions = {
     minute: '2-digit',
 }
 
-const AddTodo = ({ navigation, route }) => {
+const AddTodo = ({ navigation }) => {
     const [title, setTitle] = useState("Enter title"); // initialize state to the number of todos retreived
     const [desc, setDesc] = useState("Enter description");
     const [due, setDue] = useState(new Date());
@@ -24,7 +24,6 @@ const AddTodo = ({ navigation, route }) => {
     const handleNewTodo = () => {
         // add todo to database, in our case database is just a json file
         const todo = {
-            "id": route.params.itemId,
             "title": title,
             "description": desc,
             "due": due,

@@ -104,7 +104,7 @@ const Todos = ({ navigation }) => {
             </View>
             <TouchableOpacity
                 style={globStyles.button}
-                onPress={() => navigation.navigate('AddTodo', { itemId: todos[todos.length - 1].id + 1 })}
+                onPress={() => navigation.navigate('AddTodo')}
             >
                 <Text style={globStyles.buttonText}>New</Text>
             </TouchableOpacity>
