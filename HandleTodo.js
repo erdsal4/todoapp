@@ -23,7 +23,6 @@ export function getAllTodos() {
     });
 }
 
-
 export async function getCurrentTodos() {
     let allTodos;
     try {
@@ -37,6 +36,42 @@ export async function getCurrentTodos() {
     return JSON.stringify(allTodos);
 }
 
+export async function getCompletedTodos() {
+    let allTodos;
+    try {
+        allTodos = await getAllTodos();
+        allTodos = JSON.parse(allTodos);
+        const todos = allTodos.todos.filter((el) => el.completed);
+        allTodos.todos = todos;
+    } catch (err) {
+        console.log(err)
+    }
+    return JSON.stringify(allTodos);
+}
+
+export async function getTodoDetails(todoId) {
+    let allTodos;
+    let todo;
+    try {
+        allTodos = await getAllTodos();
+        allTodos = JSON.parse(allTodos);
+        todo = allTodos.todos.filter((el) => el.id == todoId);
+    } catch (err) {
+        console.log(err)
+    }
+    return JSON.stringify(todo);
+}
+
+function updateTodosTable(newTodos) {
+    return new Promise(function (resolve, reject) {
+        RNFS.writeFile(path, newTodos)
+            .then(resolve('success'))
+            .catch((er) => {
+                console.log(er);
+                reject('could not add new data/update todos table')});
+    });
+}
+
 export function addNewTodo(todo) {
 
     return new Promise(function (resolve, reject) {
@@ -47,15 +82,15 @@ export function addNewTodo(todo) {
             const lastID = allTodos.todos[allTodos.todos.length - 1].id;
             todo['id'] = lastID+1;
             todo['completed'] = false;
-            
+
             allTodos['todos'].push(todo);
             const newTodos = JSON.stringify(allTodos);
             try {
-                RNFS.writeFile(path, newTodos)
-                    .then(resolve('success'))
-                    .catch(reject('could not add new data'));
+                const stat = await updateTodosTable(newTodos);
+                resolve(stat)
             } catch (er) {
                 console.log(er);
+                reject(er);
             }
         }, 100)
     });
@@ -77,11 +112,36 @@ export function markTodosComplete(todoIds) {
             console.log(allTodos);
             const newTodos = JSON.stringify(allTodos);
             try {
-                RNFS.writeFile(path,newTodos)
-                    .then(resolve('success'))
-                    .catch(reject('could not update data'));
+                const stat = await updateTodosTable(newTodos);
+                resolve(stat)
             } catch (er) {
                 console.log(er);
+                reject(er);
+            }
+        }, 100)
+    });
+}
+
+export async function updateTodo(todo) {
+    return new Promise(function (resolve, reject) {
+        setTimeout(async function () {
+            let allTodos = await getAllTodos();
+            allTodos = await JSON.parse(allTodos);
+            allTodos["todos"]
+                .forEach((el, ind) => {
+                    if (todo.id == el.id) {
+                        allTodos["todos"][ind] = todo
+                    }
+                });
+            console.log('updatedtodos');
+            console.log(allTodos);
+            const newTodos = JSON.stringify(allTodos);
+            try {
+                const stat = await updateTodosTable(newTodos);
+                resolve(stat)
+            } catch (er) {
+                console.log(er);
+                reject(er);
             }
         }, 100)
     });
