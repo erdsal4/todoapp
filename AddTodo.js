@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import { useFocusEffect } from '@react-navigation/native';
 import globStyles from './Styles';
 import DatePicker from 'react-native-date-picker';
 import { addNewTodo } from './HandleTodo';
+import { formatRelative, parseISO } from 'date-fns';
+import { locale } from './AddTodoLocale';
 
-const dateOptions = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-}
-
-const AddTodo = ({ navigation }) => {
+const AddTodo = ({ navigation, route }) => {
     const [title, setTitle] = useState("Enter title"); // initialize state to the number of todos retreived
     const [desc, setDesc] = useState("Enter description");
     const [due, setDue] = useState(new Date());
@@ -21,6 +16,7 @@ const AddTodo = ({ navigation }) => {
     const toggleOverlay = () => {
         setDatePickerOpen(!isDatePickerOpen);
     }
+
     const handleNewTodo = () => {
         // add todo to database, in our case database is just a json file
         const todo = {
@@ -38,20 +34,36 @@ const AddTodo = ({ navigation }) => {
         .catch((err) => console.log(err));
         
     }
+
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+            if(isActive && typeof route.params !== 'undefined') setDue(new Date(route.params.date))
+            
+            return () => {
+                isActive = false;
+            };
+        }, [])
+    );
+
     return (
         <View style={globStyles.container}>
             <View style={styles.formContainer}>
                 <View style={styles.formField}>
                     <Text style={styles.labels}>Title:</Text>
+                    <View style={styles.txtinputContainer}>
                     <TextInput
                         style={styles.txtinput}
                         onChangeText={title => setTitle(title)}
                         value={title}
                         selectTextOnFocus={true}
                     />
+                    </View>
+                    
                 </View>
                 <View style={styles.formField}>
                     <Text style={styles.labels}>Description:</Text>
+                    <View style= {styles.txtinputContainer}>
                     <TextInput
                         multiline
                         style={[styles.txtinput, {maxWidth: '80%'}]}
@@ -59,15 +71,19 @@ const AddTodo = ({ navigation }) => {
                         value={desc}
                         selectTextOnFocus={true}
                     />
+                    </View>
+                    
                 </View>
                 <View style={styles.formField}>
                     <Text style={styles.labels}>Due date:</Text>
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={toggleOverlay}
-                    >
-                        <Text style={styles.txtinput}>{due.toLocaleString("en-US", dateOptions)}</Text>
-                    </TouchableOpacity>
+                    <View style= {styles.txtinputContainer}>
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={toggleOverlay}
+                        > 
+                            <Text style={styles.txtinput}>{formatRelative(new Date(due), new Date(), { locale })}</Text>
+                        </TouchableOpacity>
+                    </View>
                     <> 
                         <DatePicker
                             modal
@@ -85,12 +101,14 @@ const AddTodo = ({ navigation }) => {
                 </View>
                 <View style={styles.formField}>
                     <Text style={styles.labels}>Urgency:</Text>
+                    <View style= {styles.txtinputContainer}>
                     <TextInput
                         style={styles.txtinput}
                         onChangeText={urg => setUrg(urg)}
                         value={urg}
                         selectTextOnFocus={true}
                     />
+                    </View>
                 </View>
             </View>
             <TouchableOpacity
@@ -117,10 +135,24 @@ const styles = StyleSheet.create(
         formField: {
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'flex-start'
+            justifyContent: 'space-between',
+            paddingBottom: 20
         },
         txtinput: {
-            marginLeft: 10
+            padding: 0,
+            paddingLeft: 5,
+            color: 'black'
+        },
+        txtinputContainer: {
+            marginLeft: 10,
+            flex:5,
+            backgroundColor: 'lightgrey',
+            borderRadius: 5,
+            borderBottomColor: 'black',
+            borderBottomWidth: StyleSheet.hairlineWidth
+        },
+        labels: {
+            flex: 2
         }
     }
 );

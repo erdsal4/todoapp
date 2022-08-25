@@ -12,14 +12,15 @@ const globStyles = StyleSheet.create(
         },
         button: {
             backgroundColor: '#AA4A44',
-            borderRadius: 100,
+            borderRadius: 50,
             height:75,
             width: 75,
             padding: 15,
             margin: 10,
             alignSelf: 'flex-end',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            elevation: 3
         },
         buttonText: {
             color: '#FAF9F6', 
