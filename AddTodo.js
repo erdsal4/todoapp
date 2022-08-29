@@ -13,9 +13,17 @@ const AddTodo = ({ navigation, route }) => {
     const [due, setDue] = useState(new Date());
     const [urg, setUrg] = useState("-1");
     const [isDatePickerOpen, setDatePickerOpen] = useState(false);
-    const toggleOverlay = () => {
-        setDatePickerOpen(!isDatePickerOpen);
-    }
+    
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+            if (isActive && typeof route.params !== 'undefined') setDue(new Date(route.params.date))
+
+            return () => {
+                isActive = false;
+            };
+        }, [])
+    );
 
     const handleNewTodo = () => {
         // add todo to database, in our case database is just a json file
@@ -27,64 +35,58 @@ const AddTodo = ({ navigation, route }) => {
         }
         // try adding to database
         addNewTodo(todo)
-        .then((res) => {
-            console.log(res + ". " + "added data: ", todo);
-            navigation.navigate("Todos")
-        })
-        .catch((err) => console.log(err));
-        
+            .then((res) => {
+                console.log(res + ". " + "added data: ", todo);
+                navigation.navigate("Todos")
+            })
+            .catch((err) => console.log(err));
+
     }
 
-    useFocusEffect(
-        React.useCallback(() => {
-            let isActive = true;
-            if(isActive && typeof route.params !== 'undefined') setDue(new Date(route.params.date))
-            
-            return () => {
-                isActive = false;
-            };
-        }, [])
-    );
+    const toggleOverlay = () => {
+        setDatePickerOpen(!isDatePickerOpen);
+    }
 
     return (
-        <View style={globStyles.container}>
+        <View style={globStyles.mainContainer}>
             <View style={styles.formContainer}>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Title:</Text>
+
+                <View style={styles.formFieldContainer}>
+                    <Text style={styles.fieldLabel}>Title:</Text>
                     <View style={styles.txtinputContainer}>
-                    <TextInput
-                        style={styles.txtinput}
-                        onChangeText={title => setTitle(title)}
-                        value={title}
-                        selectTextOnFocus={true}
-                    />
+                        <TextInput
+                            style={styles.txtinput}
+                            onChangeText={title => setTitle(title)}
+                            value={title}
+                            selectTextOnFocus={true}
+                        />
                     </View>
-                    
                 </View>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Description:</Text>
-                    <View style= {styles.txtinputContainer}>
-                    <TextInput
-                        multiline
-                        style={[styles.txtinput, {maxWidth: '80%'}]}
-                        onChangeText={desc => setDesc(desc)}
-                        value={desc}
-                        selectTextOnFocus={true}
-                    />
+
+                <View style={styles.formFieldContainer}>
+                    <Text style={styles.fieldLabel}>Description:</Text>
+                    <View style={styles.txtinputContainer}>
+                        <TextInput
+                            multiline
+                            style={[styles.txtinput, { maxWidth: '80%' }]}
+                            onChangeText={desc => setDesc(desc)}
+                            value={desc}
+                            selectTextOnFocus={true}
+                        />
                     </View>
-                    
                 </View>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Due date:</Text>
-                    <View style= {styles.txtinputContainer}>
+
+                <View style={styles.formFieldContainer}>
+                    <Text style={styles.fieldLabel}>Due date:</Text>
+                    <View style={styles.txtinputContainer}>
                         <TouchableOpacity
                             style={styles.button}
                             onPress={toggleOverlay}
-                        > 
+                        >
                             <Text style={styles.txtinput}>{formatRelative(new Date(due), new Date(), { locale })}</Text>
                         </TouchableOpacity>
                     </View>
-                    <> 
+                    <>
                         <DatePicker
                             modal
                             open={isDatePickerOpen}
@@ -99,23 +101,24 @@ const AddTodo = ({ navigation, route }) => {
                         />
                     </>
                 </View>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Urgency:</Text>
-                    <View style= {styles.txtinputContainer}>
-                    <TextInput
-                        style={styles.txtinput}
-                        onChangeText={urg => setUrg(urg)}
-                        value={urg}
-                        selectTextOnFocus={true}
-                    />
+
+                <View style={styles.formFieldContainer}>
+                    <Text style={styles.fieldLabel}>Urgency:</Text>
+                    <View style={styles.txtinputContainer}>
+                        <TextInput
+                            style={styles.txtinput}
+                            onChangeText={urg => setUrg(urg)}
+                            value={urg}
+                            selectTextOnFocus={true}
+                        />
                     </View>
                 </View>
             </View>
             <TouchableOpacity
-                style={globStyles.button}
+                style={globStyles.addButton}
                 onPress={handleNewTodo}
             >
-                <Text style={globStyles.buttonText}>Add</Text>
+                <Text style={globStyles.addButtonText}>Add</Text>
             </TouchableOpacity>
         </View>
     );
@@ -132,7 +135,7 @@ const styles = StyleSheet.create(
             paddingTop: 50
 
         },
-        formField: {
+        formFieldContainer: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -145,13 +148,13 @@ const styles = StyleSheet.create(
         },
         txtinputContainer: {
             marginLeft: 10,
-            flex:5,
+            flex: 5,
             backgroundColor: 'lightgrey',
             borderRadius: 5,
             borderBottomColor: 'black',
             borderBottomWidth: StyleSheet.hairlineWidth
         },
-        labels: {
+        fieldLabel: {
             flex: 2
         }
     }

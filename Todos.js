@@ -25,6 +25,8 @@ const Todos = ({ navigation }) => {
         }, [])
     );
 
+    console.log('rerender');
+
     const fetchTodos = async () => {
         try {
             const response = await getCurrentTodos();
@@ -119,7 +121,7 @@ const Todos = ({ navigation }) => {
     )
 
     return (
-        <View style={globStyles.container}>
+        <View style={globStyles.mainContainer}>
             {isMarkCompleteVisible ?
                 <View style={styles.markCompleteButtonContainer}>
                     <Button color="#696969" onPress={handleMarkComplete} title="Mark as Complete" />
@@ -135,10 +137,10 @@ const Todos = ({ navigation }) => {
                 />
             </View>
             <TouchableOpacity
-                style={globStyles.button}
+                style={globStyles.addButton}
                 onPress={() => navigation.navigate('AddTodo')}
             >
-                <Text style={globStyles.buttonText}>New</Text>
+                <Text style={globStyles.addButtonText}>New</Text>
             </TouchableOpacity>
         </View>
     );
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     },
     todoRow: {
         flexDirection: 'row',
-        padding: 20,
+        padding: 15,
         alignItems: 'center'
     },
     todoTitle: {

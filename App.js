@@ -2,10 +2,10 @@ import React from 'react';
 import Todos from './Todos';
 import CompletedTodos from './CompletedTodos';
 import AddTodo from './AddTodo';
+import TodoDetail from './TodoDetail';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import TodoDetail from './TodoDetail';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();

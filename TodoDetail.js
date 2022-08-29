@@ -77,7 +77,7 @@ const TodoDetail = ({route}) => {
     }
 
     return (
-        <View style={globStyles.container}>
+        <View style={globStyles.mainContainer}>
             <View style={styles.formContainer}>
                 <View style={styles.formField}>
                     <Text style={styles.labels}>Title:</Text>

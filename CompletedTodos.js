@@ -1,28 +1,19 @@
-import React , {useState} from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, FlatList, StyleSheet, SectionList, TouchableOpacity } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import globStyles from './Styles';
-import {getCompletedTodos } from './HandleTodo';
+import { getCompletedTodos } from './HandleTodo';
+import { getWeek, parseISO } from 'date-fns';
+var _ = require('lodash');
 
-const CompletedTodos = ({navigation}) => {
+const CompletedTodos = ({ navigation }) => {
     const [todos, setTodos] = useState([]);
+    const [sections, setSections] = useState([]);
 
     useFocusEffect(
         React.useCallback(() => {
             let isActive = true;
-            const fetchCompletedTodos = async () => {
-                try {
-                    const response = await getCompletedTodos();
-                    const json = await JSON.parse(response);
-                    if (isActive) {
-                        setTodos(json.todos);
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-
-            fetchCompletedTodos();
+            if (isActive) fetchCompletedTodos();
 
             return () => {
                 isActive = false;
@@ -30,23 +21,64 @@ const CompletedTodos = ({navigation}) => {
         }, [])
     );
 
+    const fetchCompletedTodos = async () => {
+        try {
+            const response = await getCompletedTodos();
+            const json = await JSON.parse(response);
+            const todos = json.todos;
+            let sections = [];
+            const groupedByDate = _.groupBy(todos, todo => getWeek(parseISO(todo.due)));
+            const thisWeek = getWeek(new Date());
+            for (const [key, value] of Object.entries(groupedByDate)) {
+                let title = key
+                if (key == thisWeek) {
+                    title = 'this week'
+                }
+                else if (key == thisWeek - 1) {
+                    title = 'last week';
+                }
+                else {
+                    title = `${thisWeek - key} weeks ago`;
+                }
+                sections.push({
+                    title: title,
+                    data: value,
+                    week: key
+                });
+            }
+            sections = _.orderBy(sections, ['week'], ['desc']);
+            console.log(sections);
+            setTodos(todos);
+            setSections(sections);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
     const renderTodo = ({ item: todo }) => (
-        <View style={styles.todo}>
+        <View style={globStyles.todoRow}>
             <TouchableOpacity
-                onPress={() => navigation.navigate('TodoDetail', {"todoId": todo.id})}
+                onPress={() => navigation.navigate('TodoDetail', { "todoId": todo.id })}
             >
-                <Text style={[globStyles.text, styles.title]}>{todo.title}</Text>
+                <Text style={ [globStyles.text, globStyles.todoTitle]}>{todo.title}</Text>
             </TouchableOpacity>
         </View>
     );
 
+    const renderDate = ({ section: { title } }) => (
+        <View style={globStyles.sectionHeader}>
+            <Text style={globStyles.sectionHeaderText}>{title}</Text>
+        </View>
+    )
+
     return (
-        <View style={globStyles.container}>
-            <View>
-                <FlatList
-                    data={todos}
+        <View style={globStyles.mainContainer}>
+            <View style={globStyles.todoListContainer}>
+                <SectionList
+                    sections={sections}
                     renderItem={renderTodo}
-                    keyExtractor={(item) => item.id}
+                    renderSectionHeader={renderDate}
+                    keyExtractor={item => item.id}
                 />
             </View>
         </View>
@@ -54,13 +86,8 @@ const CompletedTodos = ({navigation}) => {
 }
 
 const styles = StyleSheet.create({
-    todo: {
-        flexDirection: 'row',
-        padding: 20,
-    },
-    title: {
-        fontSize: 15,
-    }
+
+
 });
 
 export default CompletedTodos;
