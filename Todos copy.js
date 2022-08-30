@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useContext } from 'react';
+import React, { useState } from 'react';
 import { View, Text, SectionList, StyleSheet, TouchableOpacity, Button, Image } from "react-native";
 import CheckBox from '@react-native-community/checkbox';
 import { useFocusEffect } from '@react-navigation/native';
@@ -6,22 +6,12 @@ import globStyles from './Styles';
 import { getAllTodos, getCurrentTodos, markTodosComplete } from './HandleTodo';
 import { formatRelative, parseISO } from 'date-fns';
 import { locale, dateToString } from './TodosLocale';
+import { parseInt } from 'lodash';
 var _ = require('lodash');
 
-/*
-    todotemplate
-
-    useState(checkedTodos)
-    - mark complete button -- needs to know if any checked, by using state checkedTodos
-    - todos section list - changing checkedTodos shouldn't change this 
-        - checkbox should have access to checkedTodos and setCheckedTodos method
-
-*/
-const CheckedContext = React.createContext();
-
-const CustCheckBox = ({ todoId }) => {
+const CustCheckBox = ({ todoId, addChecked, deleteChecked }) => {
     const [checked, setChecked] = useState(false);
-    const {addChecked, deleteChecked} = useContext(CheckedContext);
+
     return (
         <View style={styles.checkboxContainer}>
             <CheckBox
@@ -41,61 +31,34 @@ const CustCheckBox = ({ todoId }) => {
     );
 }
 
+/*
 
-const MarkCompleteButton = ({handleMarkComplete}) => {
-    console.log("here2");
-    return(
-        <View>
-            <Button color="#696969" onPress={handleMarkComplete} title="Mark as Complete" />
-        </View>
-        );
-}
+ app
 
-const TodoList = ({ memoSections, navigation}) => {
-    console.log("here3",memoSections.sections);
-    const renderTodo = ({ item: todo }) => (
-        <View style={styles.todoRow}>
-            <CustCheckBox todoId={todo.id}/>
-            <Text style={[globStyles.text, styles.todoTitle]}>{todo.title}</Text>
-        </View>
-    );
+    useState(checkedTodos)
 
-    const renderDate = ({ section: { title } }) => (
-        <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>{title}</Text>
-        </View>
-    )
+    - mark complete button -- needs to know if any checked, by using state checkedTodos
+    - todos section list
+        - checkbox can inherit set CheckedTodos method
 
-    const renderAddButton = ({ section }) => (
-        <TouchableOpacity style={styles.plusButtonContainer} onPress={() => navigation.navigate('AddTodo', { "date": section.date })}>
-            <Image source={require('./assets/icons/plus.jpg')} style={styles.icon} />
-         </TouchableOpacity>
-    )
+*/
 
-    return (
-        
-        <View>
-            <View>
-                <SectionList
-                    sections={memoSections.sections}
-                    renderItem={renderTodo}
-                    renderSectionHeader={renderDate}
-                    keyExtractor={item => item.id}
-                    renderSectionFooter = {renderAddButton}
-                />
-            </View>
-        </View>
-    );
-}
+const Todos = ({ navigation }) => {
+    const [checkedTodos, setCheckedTodos] = useState([]) // initialize state to the number of todos retreived
+    const [sections, setSections] = useState([])
 
-const TodoListMemo = React.memo(TodoList);
+    const addChecked = (todoId) => {
+        let checked = [...checkedTodos, todoId];
+        console.log(checked);
+        setCheckedTodos(checked);
+    } 
 
-const Todos = ({navigation}) => {
+    const deleteChecked = (todoId) => {
+        let checked = [...checkedTodos]
+        checked.splice(checked.indexOf(todoId));
+        setCheckedTodos(checked);
+    }
 
-    const [checkedTodos, setCheckedTodos] = useState([]);
-    const [sections, setSections] = useState([]);
-    const memoSections = useMemo(() => ({ sections: sections }), [sections]);
-    console.log('todos rerenders')
     useFocusEffect(
         React.useCallback(() => {
             let isActive = true;
@@ -106,6 +69,8 @@ const Todos = ({navigation}) => {
             };
         }, [])
     );
+
+    console.log('todos rerender');
 
     const fetchTodos = async () => {
         try {
@@ -124,23 +89,10 @@ const Todos = ({navigation}) => {
             }
             sections = _.orderBy(sections, ['date'], ['asc']);
             setSections(sections);
+            setCheckedTodos([]);
         } catch (err) {
             console.error(err);
         }
-    }
-
-    const addChecked = (todoId) => {
-        console.log('checked todos',checkedTodos)
-        let checked = [...checkedTodos, todoId];
-        console.log('checked', checked);
-        setCheckedTodos(checked);
-    }
-
-    const deleteChecked = (todoId) => {
-        let checked = [...checkedTodos];
-        checked.splice(checked.indexOf(todoId));
-        console.log('checked', checked);
-        setCheckedTodos(checked);
     }
 
     const handleMarkComplete = async function () {
@@ -153,19 +105,49 @@ const Todos = ({navigation}) => {
         }
         // update todos on screen
         try {
-            setCheckedTodos([]);
             await fetchTodos();
         } catch (err) {
             console.error(err);
         }
     }
 
-    return(
-        <View>
-            {checkedTodos.length != 0 ? <MarkCompleteButton handleMarkComplete={handleMarkComplete}/> : ''}
-            <CheckedContext.Provider value={{addChecked: addChecked, deleteChecked:deleteChecked}}>
-                <TodoListMemo memoSections={memoSections} navigation={navigation}/>
-            </CheckedContext.Provider>
+    
+
+    const renderTodo = ({ item: todo }) => (
+        <View style={styles.todoRow}>
+            <CustCheckBox todoId={todo.id} deleteChecked={deleteChecked} addChecked={addChecked}/>
+            <Text style={[globStyles.text, styles.todoTitle]}>{todo.title}</Text>
+        </View>
+    );
+
+    const renderDate = ({ section: { title } }) => (
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{title}</Text>
+        </View>
+    )
+
+    const renderAddButton = ({ section }) => (
+        <TouchableOpacity style={styles.plusButtonContainer} onPress={() => navigation.navigate('AddTodo', { "date": section.date })}>
+            <Image source={require('./assets/icons/plus.jpg')} style={styles.icon} />
+         </TouchableOpacity>
+    )
+
+    return (
+        <View style={globStyles.mainContainer}>
+            {checkedTodos.length != 0 ?
+                <View style={styles.markCompleteButtonContainer}>
+                    <Button color="#696969" onPress={handleMarkComplete} title="Mark as Complete" />
+                </View>
+                : ''}
+            <View style={styles.todoListContainer}>
+                <SectionList
+                    sections={sections}
+                    renderItem={renderTodo}
+                    renderSectionHeader={renderDate}
+                    keyExtractor={item => item.id}
+                    renderSectionFooter = {renderAddButton}
+                />
+            </View>
             <TouchableOpacity
                 style={globStyles.addButton}
                 onPress={() => navigation.navigate('AddTodo')}
