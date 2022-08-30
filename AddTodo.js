@@ -6,6 +6,7 @@ import DatePicker from 'react-native-date-picker';
 import { addNewTodo } from './HandleTodo';
 import { formatRelative, parseISO } from 'date-fns';
 import { locale } from './AddTodoLocale';
+import { AddTodoButton } from './Buttons';
 
 const AddTodo = ({ navigation, route }) => {
     const [title, setTitle] = useState("Enter title"); // initialize state to the number of todos retreived
@@ -114,12 +115,7 @@ const AddTodo = ({ navigation, route }) => {
                     </View>
                 </View>
             </View>
-            <TouchableOpacity
-                style={globStyles.addButton}
-                onPress={handleNewTodo}
-            >
-                <Text style={globStyles.addButtonText}>Add</Text>
-            </TouchableOpacity>
+            <AddTodoButton onPress={handleNewTodo} title="Add"/>
         </View>
     );
 

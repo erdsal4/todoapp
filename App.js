@@ -1,5 +1,5 @@
 import React from 'react';
-import Todos from './Todos';
+import Todos from './Home/Todos';
 import CompletedTodos from './CompletedTodos';
 import AddTodo from './AddTodo';
 import TodoDetail from './TodoDetail';
