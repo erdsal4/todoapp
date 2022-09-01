@@ -48,7 +48,6 @@ const CompletedTodos = ({ navigation }) => {
             }
             sections = _.orderBy(sections, ['week'], ['desc']);
             console.log(sections);
-            setTodos(todos);
             setSections(sections);
         } catch (err) {
             console.error(err);
@@ -56,37 +55,46 @@ const CompletedTodos = ({ navigation }) => {
     }
 
     const renderTodo = ({ item: todo }) => (
-        <View style={globStyles.todoRow}>
+        <View style={styles.todoRow}>
             <TouchableOpacity
                 onPress={() => navigation.navigate('TodoDetail', { "todoId": todo.id })}
             >
-                <Text style={ [globStyles.text, globStyles.todoTitle]}>{todo.title}</Text>
+                <Text style={globStyles.text}>{todo.title}</Text>
             </TouchableOpacity>
         </View>
     );
 
     const renderDate = ({ section: { title } }) => (
-        <View style={globStyles.sectionHeader}>
-            <Text style={globStyles.sectionHeaderText}>{title}</Text>
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{title}</Text>
         </View>
     )
 
     return (
         <View style={globStyles.mainContainer}>
-            <View style={globStyles.todoListContainer}>
-                <SectionList
+            <SectionList
                     sections={sections}
                     renderItem={renderTodo}
                     renderSectionHeader={renderDate}
                     keyExtractor={item => item.id}
-                />
-            </View>
+            />
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-
+    sectionHeader: {
+        borderBottomColor: 'black',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        marginTop: 5,
+        marginBottom: 5
+    },
+    sectionHeaderText: {
+        fontSize: 20
+    },
+    todoRow: {
+        paddingLeft: 15,
+    }
 
 });
 
