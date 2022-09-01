@@ -41,10 +41,11 @@ const Todos = ({ navigation }) => {
                 sections.push({
                     title: formatRelative(new Date(key), new Date(), { locale }),
                     data: value,
-                    date: key
+                    date: key,
+                    dateObj: new Date(key)
                 });
             }
-            sections = _.orderBy(sections, ['date'], ['asc']);
+            sections = _.orderBy(sections, ['dateObj'], ['asc']);
             setSections(sections);
         } catch (err) {
             console.error(err);
