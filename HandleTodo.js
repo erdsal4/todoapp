@@ -146,3 +146,25 @@ export async function updateTodo(todo) {
         }, 100)
     });
 }
+
+export async function deleteTodo(todoId) {
+    return new Promise(function (resolve, reject) {
+        setTimeout(async function () {
+            let allTodos = await getAllTodos();
+            allTodos = await JSON.parse(allTodos);
+            allTodos["todos"] = allTodos["todos"]
+                                .filter(todo => todo.id != todoId);
+            console.log('updatedtodos');
+            console.log(allTodos);
+            const newTodos = JSON.stringify(allTodos);
+            try {
+                const stat = await updateTodosTable(newTodos);
+                resolve(stat);
+            } catch (er) {
+                console.log(er);
+                reject(er);
+            }
+        }, 100)
+    });
+
+}

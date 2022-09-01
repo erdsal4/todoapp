@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Button } from "react-native";
 import globStyles from './Styles';
 import { useFocusEffect } from '@react-navigation/native';
-import { getTodoDetails, updateTodo } from './HandleTodo';
+import { getTodoDetails, updateTodo, deleteTodo } from './HandleTodo';
 import CheckBox from '@react-native-community/checkbox';
 
 const dateOptions = {
@@ -13,7 +13,7 @@ const dateOptions = {
     minute: '2-digit',
 }
 
-const TodoDetail = ({route}) => {
+const TodoDetail = ({navigation, route}) => {
     const [todo, setTodo] = useState({});
     const [updatedTodo, setUpdatedTodo] = useState({});
     const [isUpdateVisible, setUpdateVisible] = useState(false);
@@ -50,6 +50,16 @@ const TodoDetail = ({route}) => {
             console.log('update successful');
             setTodo(updatedTodo);
             setUpdateVisible(false);
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const handleDelete = async function () {
+        try {
+            const _ = await deleteTodo(todo.id);
+            console.log('delete successful');
+            navigation.goBack();
         } catch (err) {
             console.log(err);
         }
@@ -99,11 +109,14 @@ const TodoDetail = ({route}) => {
                     <Text style={styles.labels}>Completed:</Text>
                     <CustCheckBox/>
                 </View>
-                {isUpdateVisible ?
-                <View style={styles.updateButton}>
-                    <Button color="#696969" onPress={handleUpdate} title="Update Todo" />
+                <View style={styles.buttonRow}>
+                    <View style={styles.buttonContainer}>
+                        <Button color="#696969" onPress={handleDelete} title="Delete" />
+                    </View>
+                    <View style={styles.buttonContainer}>
+                        <Button color="#696969" onPress={handleUpdate} disabled= {!isUpdateVisible} title="Update" />
+                    </View>
                 </View>
-                : ''}
             </View>
         </View>
     );
@@ -128,7 +141,19 @@ const styles = StyleSheet.create(
         txtinput: {
             marginLeft: 10,
             color: 'black'
+        },
+        buttonRow : {
+            flex: 1,
+            flexDirection: 'row',
+            marginTop: 10,
+            justifyContent: 'center',
+            alignItems: 'flex-start'
+        }, 
+        buttonContainer: {
+            marginHorizontal: 5,
+            flex:1
         }
+    
     }
 );
 
