@@ -2,10 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { View } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { formatRelative, parseISO } from 'date-fns';
-import {getCurrentTodos, markTodosComplete } from '../HandleTodo';
-import { locale, dateToString } from './TodosLocale';
-import { TodoList } from './TodoList';
-import { MarkCompleteButton, AddTodoButton } from '../Buttons';
+import {getCurrentTodos, markTodosComplete } from '../api/HandleTodo';
+import { locale, dateToString } from '../locales/TodosLocale';
+import { TodoList } from '../components/TodoList';
+import { MarkCompleteButton, AddTodoButton } from '../components/Buttons';
 import globStyles from '../Styles';
 var _ = require('lodash');
 

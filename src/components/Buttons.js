@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Button, StyleSheet } from "react-native";
 
 export const MarkCompleteButton = ({ handleMarkComplete }) => {
-    console.log("here2");
     return (
         <View style={styles.markCompleteButtonContainer}>
             <Button color="#696969" onPress={handleMarkComplete} title="Mark as Complete" />

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
-import globStyles from './Styles';
+import globStyles from '../Styles';
 import DatePicker from 'react-native-date-picker';
-import { addNewTodo } from './HandleTodo';
+import { addNewTodo } from '../api/HandleTodo';
 import { formatRelative, parseISO } from 'date-fns';
-import { locale } from './AddTodoLocale';
-import { AddTodoButton } from './Buttons';
+import { locale } from '../locales/AddTodoLocale';
+import { AddTodoButton } from '../components/Buttons';
 
 const AddTodo = ({ navigation, route }) => {
     const [title, setTitle] = useState("Enter title"); // initialize state to the number of todos retreived

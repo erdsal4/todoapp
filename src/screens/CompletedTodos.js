@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, SectionList, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, SectionList, TouchableOpacity } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
-import globStyles from './Styles';
-import { getCompletedTodos } from './HandleTodo';
+import globStyles from '../Styles';
+import { getCompletedTodos } from '../api/HandleTodo';
 import { getWeek, parseISO } from 'date-fns';
 var _ = require('lodash');
 
 const CompletedTodos = ({ navigation }) => {
-    const [todos, setTodos] = useState([]);
     const [sections, setSections] = useState([]);
 
     useFocusEffect(
@@ -30,7 +29,8 @@ const CompletedTodos = ({ navigation }) => {
             const groupedByDate = _.groupBy(todos, todo => getWeek(parseISO(todo.due)));
             const thisWeek = getWeek(new Date());
             for (const [key, value] of Object.entries(groupedByDate)) {
-                let title = key
+                let title = key;
+                console.log(value);
                 if (key == thisWeek) {
                     title = 'this week'
                 }
@@ -40,9 +40,10 @@ const CompletedTodos = ({ navigation }) => {
                 else {
                     title = `${thisWeek - key} weeks ago`;
                 }
+                console.log(value[0].due, typeof value[0].due);
                 sections.push({
                     title: title,
-                    data: value,
+                    data: _.orderBy(value, ['due'], ['desc']),
                     week: key
                 });
             }

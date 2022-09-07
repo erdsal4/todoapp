@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Button } from "react-native";
-import globStyles from './Styles';
+import globStyles from '../Styles';
 import { useFocusEffect } from '@react-navigation/native';
-import { getTodoDetails, updateTodo, deleteTodo } from './HandleTodo';
+import { getTodoDetails, updateTodo, deleteTodo } from '../api/HandleTodo';
 import CheckBox from '@react-native-community/checkbox';
 
 const dateOptions = {

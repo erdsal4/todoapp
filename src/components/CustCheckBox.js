@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { View, StyleSheet } from "react-native";
 import CheckBox from '@react-native-community/checkbox';
 import globStyles from '../Styles';
-import { CheckedContext } from './Todos';
+import { CheckedContext } from '../screens/Todos';
 
 export const CustCheckBox = ({ todoId }) => {
     const [checked, setChecked] = useState(false);
