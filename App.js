@@ -12,7 +12,7 @@ const Drawer = createDrawerNavigator();
 
 const Home = () => {
   return (
-    <Drawer.Navigator initialRouteName="Tdodos">
+    <Drawer.Navigator initialRouteName="Todos">
         <Drawer.Screen name="Todos" component={Todos} />
         <Drawer.Screen name="Completed" component={CompletedTodos} />
     </Drawer.Navigator>

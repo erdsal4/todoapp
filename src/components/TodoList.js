@@ -5,10 +5,15 @@ import { CustCheckBox } from './CustCheckBox';
 
 export const TodoList = ({ memoSections, navigation }) => {
     console.log("here3", memoSections.sections);
+
     const renderTodo = ({ item: todo }) => (
         <View style={styles.todoRow}>
             <CustCheckBox todoId={todo.id} />
+            <TouchableOpacity
+                onPress={() => navigation.navigate('TodoDetail', { "todoId": todo.id })}
+            >
             <Text style={[globStyles.text, styles.todoTitle]}>{todo.title}</Text>
+            </TouchableOpacity>
         </View>
     );
 

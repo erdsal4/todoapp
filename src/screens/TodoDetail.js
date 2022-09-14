@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Button } from "react-native";
+import {View, Text, StyleSheet, Button, Image, TouchableOpacity} from "react-native";
 import globStyles from '../Styles';
 import { useFocusEffect } from '@react-navigation/native';
 import { getTodoDetails, updateTodo, deleteTodo } from '../api/HandleTodo';
 import CheckBox from '@react-native-community/checkbox';
+import { NativeModules } from 'react-native';
+const { CalendarModule } = NativeModules;
 
 const dateOptions = {
     year: 'numeric',
@@ -17,7 +19,23 @@ const TodoDetail = ({navigation, route}) => {
     const [todo, setTodo] = useState({});
     const [updatedTodo, setUpdatedTodo] = useState({});
     const [isUpdateVisible, setUpdateVisible] = useState(false);
-    
+
+
+    React.useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <>
+                <TouchableOpacity onPress={handleDelete} >
+                    <Image source={require("../../assets/icons/delete.png")} style={globStyles.icon}/>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleExport} >
+                    <Image source={require("../../assets/icons/exportcal.png")} style={globStyles.icon}/>
+                </TouchableOpacity>
+                </>
+            ),
+        });
+    }, [navigation, todo]);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -28,6 +46,7 @@ const TodoDetail = ({navigation, route}) => {
                     const json = await JSON.parse(response);
                     if (isActive) {
                         console.log(json);
+                        console.log(typeof json[0].due, json[0].due)
                         setTodo(json[0]);
                         setUpdatedTodo(json[0]); 
                     }
@@ -46,8 +65,10 @@ const TodoDetail = ({navigation, route}) => {
     const handleUpdate = async function () {
         try {
             console.log(updatedTodo);
+            // check if updatedTodo is not same as todo
             const _ = await updateTodo(updatedTodo);
             console.log('update successful');
+            // CalendarModule.updateCalendarEvent(updatedTodo);
             setTodo(updatedTodo);
             setUpdateVisible(false);
         } catch (err) {
@@ -63,6 +84,18 @@ const TodoDetail = ({navigation, route}) => {
         } catch (err) {
             console.log(err);
         }
+    }
+
+    const handleExport = async () => {
+        console.log(todo);
+        console.log(todo.title, todo.description);
+        try {
+            const eventId = await CalendarModule.createCalendarEvent(todo.title, todo.description, todo.due);
+            // setUpdatedTodo({...updatedTodo, "eventId": eventId});
+        } catch (e) {
+            console.log(e);
+        }
+
     }
 
     const CustCheckBox = () => {
@@ -99,7 +132,7 @@ const TodoDetail = ({navigation, route}) => {
                 </View>
                 <View style={styles.formField}>
                     <Text style={styles.labels}>Due date:</Text>
-                    <Text style={styles.txtinput}>{todo.due}</Text>
+                    <Text style={styles.txtinput}>{new Date(todo.due).toLocaleString('en-US')}</Text>
                 </View>
                 <View style={styles.formField}>
                     <Text style={styles.labels}>Urgency:</Text>
@@ -111,11 +144,9 @@ const TodoDetail = ({navigation, route}) => {
                 </View>
                 <View style={styles.buttonRow}>
                     <View style={styles.buttonContainer}>
-                        <Button color="#696969" onPress={handleDelete} title="Delete" />
-                    </View>
-                    <View style={styles.buttonContainer}>
                         <Button color="#696969" onPress={handleUpdate} disabled= {!isUpdateVisible} title="Update" />
                     </View>
+
                 </View>
             </View>
         </View>

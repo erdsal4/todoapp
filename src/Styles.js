@@ -8,8 +8,9 @@ const globStyles = StyleSheet.create(
             justifyContent: 'space-around'
         },
         icon: {
-            width: 24,
-            height: 24
+            marginLeft: 18,
+            width: 30,
+            height: 30
         },
         text: {
             color: '#36454F'
