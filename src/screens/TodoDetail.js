@@ -2,26 +2,26 @@ import React, { useState } from 'react';
 import {View, Text, StyleSheet, Button, Image, TouchableOpacity, TextInput} from "react-native";
 import globStyles from '../Styles';
 import { useFocusEffect } from '@react-navigation/native';
-import { getTodoDetails, updateTodo, deleteTodo } from '../api/HandleTodo';
+import {getTodoDetails, updateTodo, deleteTodo, addNewTodo} from '../api/HandleTodo';
 import CheckBox from '@react-native-community/checkbox';
 import { NativeModules } from 'react-native';
 import {formatRelative} from "date-fns";
 import {locale} from "../locales/AddTodoLocale";
 import DatePicker from "react-native-date-picker";
-import {isTodoEqual} from "../models/TodoUtility";
 import _ from "lodash";
 const { CalendarModule } = NativeModules;
 
 const TodoDetail = ({navigation, route}) => {
-    const [title, setTitle] = useState(""); // initialize state to the number of todos retreived
+    const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [due, setDue] = useState(new Date());
     const [urg, setUrg] = useState("");
-    const [comp, setComp] = useState(false);
+    const [comp, setComp] = useState(null);
     const [eventId, setEventId] = useState(null);
     const [isDatePickerOpen, setDatePickerOpen] = useState(false);
 
     React.useEffect(() => {
+        {!route.params.isNew?
         navigation.setOptions({
             headerRight: () => (
                 <>
@@ -34,7 +34,7 @@ const TodoDetail = ({navigation, route}) => {
                 </TouchableOpacity> : ''}
                 </>
             ),
-        });
+        }) : ''}
     }, [navigation, title, desc, due, urg, comp, eventId]);
 
     useFocusEffect(
@@ -48,18 +48,17 @@ const TodoDetail = ({navigation, route}) => {
                     if (isActive) {
                         console.log(json);
                         const todo = json[0];
-                        setTitle(todo.title);
-                        setDesc(todo.description);
-                        setDue(new Date(todo.due));
-                        setUrg(todo.urgency);
-                        setComp(todo.completed);
-                        setEventId(todo.eventId);
+                        setTodoData(todo);
                     }
                 } catch (err) {
                     console.error(err);
                 }
             }
-            fetchTodo();
+            if(!route.params.isNew){
+                fetchTodo();
+            } else {
+                if (typeof route.params.date !== 'undefined') setDue(new Date(route.params.date))
+            }
 
             return () => {
                 console.log("TODODETAIL: screen becomes unfocused");
@@ -67,6 +66,15 @@ const TodoDetail = ({navigation, route}) => {
             };
         }, [])
     );
+
+    const setTodoData = (todo) => {
+        setTitle(todo.title);
+        setDesc(todo.description);
+        setDue(new Date(todo.due));
+        setUrg(todo.urgency);
+        setComp(todo.completed);
+        setEventId(todo.eventId);
+    }
 
     const createTodoFromData = () => {
         const todo = {
@@ -92,11 +100,22 @@ const TodoDetail = ({navigation, route}) => {
         }
         try {
             await updateTodo(todo);
-            const res = await todo.eventId ? await CalendarModule.updateCalendarEvent(todo): '';
+            const res = await todo.eventId ? await CalendarModule.editCalendarEvent(todo, 'edit'): '';
             console.log(res);
         } catch (err) {
             console.log(err);
         }
+    }
+
+    const handleNewTodo = () => {
+        const todo = createTodoFromData();
+        // try adding to database
+        addNewTodo(todo)
+            .then((res) => {
+                console.log(res + ". " + "added data: ", todo);
+                navigation.navigate("Todos")
+            })
+            .catch((err) => console.log(err));
     }
 
     const handleDelete = async function () {
@@ -113,7 +132,7 @@ const TodoDetail = ({navigation, route}) => {
         const todo = createTodoFromData();
         console.log(todo);
         try {
-            const eventId = await CalendarModule.createCalendarEvent(todo.title, todo.description, todo.due);
+            const eventId = await CalendarModule.editCalendarEvent(todo, 'insert');
             const localUpdatedTodo = {...todo, "eventId": eventId};
             console.log('localUpdatedTodo', localUpdatedTodo);
             const _ = await updateTodo(localUpdatedTodo);
@@ -134,7 +153,6 @@ const TodoDetail = ({navigation, route}) => {
                     tintColors={{ true: '#F15927' }}
                     onValueChange={() => {
                         setComp(!comp)
-                        // setUpdateVisible(!isUpdateVisible);
                     }}
                     style={[globStyles.text]}
                 />
@@ -147,7 +165,15 @@ const TodoDetail = ({navigation, route}) => {
                     <View style={styles.formFieldContainer}>
                         <Text style={styles.fieldLabel}>Title:</Text>
                         <View style={styles.txtinputContainer}>
-                            <Text style={styles.txtinputReadOnly}>{title}</Text>
+                            {route.params.isNew ?
+                                <TextInput
+                                    style={[styles.txtinput, { maxWidth: '80%' }]}
+                                    onChangeText={title => setTitle(title)}
+                                    value={title}
+                                    selectTextOnFocus={true}
+                                /> :
+                                <Text style={styles.txtinputReadOnly}>{title}</Text>
+                            }
                         </View>
                     </View>
 
@@ -201,21 +227,23 @@ const TodoDetail = ({navigation, route}) => {
                             />
                         </View>
                     </View>
+                    {!route.params.isNew ?
                     <View style={styles.formFieldContainer}>
                         <Text style={styles.fieldLabel}>Completed:</Text>
                         <View style={styles.checkboxContainer}>
                             <CustCheckBox/>
                         </View>
-                    </View>
+                    </View> : ''
+                    }
                     <View style={styles.buttonRow}>
                         <View style={styles.buttonContainer}>
-                            <Button color="#696969" onPress={handleUpdate} title="Update" />
+                            {route.params.isNew ?
+                                <Button color="#696969" onPress={handleNewTodo} title="Add" /> :
+                                <Button color="#696969" onPress={handleUpdate} title="Update" />
+                            }
                         </View>
                     </View>
-
-
                 </View>
-
             </View>
     );
 

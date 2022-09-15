@@ -24,7 +24,7 @@ export const TodoList = ({ memoSections, navigation }) => {
     )
 
     const renderAddButton = ({ section }) => (
-        <TouchableOpacity style={styles.plusButtonContainer} onPress={() => navigation.navigate('AddTodo', { "date": section.date })}>
+        <TouchableOpacity style={styles.plusButtonContainer} onPress={() => navigation.navigate('TodoDetail', {'isNew': true, "date": section.date })}>
             <Image source={require('../../assets/icons/plus.jpg')} style={styles.icon} />
         </TouchableOpacity>
     )

@@ -1,7 +1,6 @@
 import React from 'react';
 import Todos from './src/screens/Todos';
 import CompletedTodos from './src/screens/CompletedTodos';
-import AddTodo from './src/screens/AddTodo';
 import TodoDetail from './src/screens/TodoDetail';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -33,10 +32,6 @@ const App = () => {
           component={Home}
         />
         <Stack.Group screenOptions = {{headerShown : true}}>
-          <Stack.Screen 
-            name="AddTodo" 
-            component={AddTodo} 
-          />
           <Stack.Screen 
             name="TodoDetail" 
             component={TodoDetail} 

@@ -89,7 +89,7 @@ const Todos = ({ navigation }) => {
             <CheckedContext.Provider value={{ addChecked: addChecked, deleteChecked: deleteChecked }}>
                 <TodoListMemo memoSections={memoSections} navigation={navigation} />
             </CheckedContext.Provider>
-            <AddTodoButton onPress={() => navigation.navigate('AddTodo')} title="New"/>
+            <AddTodoButton onPress={() => navigation.navigate('TodoDetail', {'isNew': true})} title="New"/>
         </View>
     );
 }
