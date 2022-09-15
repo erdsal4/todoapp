@@ -13,7 +13,6 @@ export function getAllTodos() {
             try {
                 response = await RNFS.readFile(path);
                 response = JSON.parse(response);
-                // console.log(response);
             } catch (er) {
                 console.log(er);
             }
@@ -65,7 +64,9 @@ export async function getTodoDetails(todoId) {
 function updateTodosTable(newTodos) {
     return new Promise(function (resolve, reject) {
         RNFS.writeFile(path, newTodos)
-            .then(resolve('success'))
+            .then(() => {
+                console.log("HANDLETODO: updatedTodosTable");
+                resolve('success')})
             .catch((er) => {
                 console.log(er);
                 reject('could not add new data/update todos table')});
@@ -108,8 +109,6 @@ export function markTodosComplete(todoIds) {
                         el["completed"] = true;
                     }
                 });
-            console.log('updatedtodos');
-            console.log(allTodos);
             const newTodos = JSON.stringify(allTodos);
             try {
                 const stat = await updateTodosTable(newTodos);
@@ -133,8 +132,6 @@ export async function updateTodo(todo) {
                         allTodos["todos"][ind] = todo
                     }
                 });
-            console.log('updatedtodos');
-            console.log(allTodos);
             const newTodos = JSON.stringify(allTodos);
             try {
                 const stat = await updateTodosTable(newTodos);
@@ -154,8 +151,6 @@ export async function deleteTodo(todoId) {
             allTodos = await JSON.parse(allTodos);
             allTodos["todos"] = allTodos["todos"]
                                 .filter(todo => todo.id != todoId);
-            console.log('updatedtodos');
-            console.log(allTodos);
             const newTodos = JSON.stringify(allTodos);
             try {
                 const stat = await updateTodosTable(newTodos);

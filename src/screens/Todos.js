@@ -9,7 +9,7 @@ import { MarkCompleteButton, AddTodoButton } from '../components/Buttons';
 import globStyles from '../Styles';
 var _ = require('lodash');
 
-export const CheckedContext = React.createContext();
+import {CheckedContext} from '../CheckedContext.js';
 const TodoListMemo = React.memo(TodoList);
 
 const Todos = ({ navigation }) => {

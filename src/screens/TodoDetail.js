@@ -17,9 +17,7 @@ const dateOptions = {
 
 const TodoDetail = ({navigation, route}) => {
     const [todo, setTodo] = useState({});
-    const [updatedTodo, setUpdatedTodo] = useState({});
     const [isUpdateVisible, setUpdateVisible] = useState(false);
-
 
     React.useEffect(() => {
         navigation.setOptions({
@@ -28,10 +26,10 @@ const TodoDetail = ({navigation, route}) => {
                 <TouchableOpacity onPress={handleDelete} >
                     <Image source={require("../../assets/icons/delete.png")} style={globStyles.icon}/>
                 </TouchableOpacity>
-
-                <TouchableOpacity onPress={handleExport} >
+                    {!todo.eventId ?
+                <TouchableOpacity onPress={handleExport}>
                     <Image source={require("../../assets/icons/exportcal.png")} style={globStyles.icon}/>
-                </TouchableOpacity>
+                </TouchableOpacity> : ''}
                 </>
             ),
         });
@@ -39,6 +37,7 @@ const TodoDetail = ({navigation, route}) => {
 
     useFocusEffect(
         React.useCallback(() => {
+            console.log("screen becomes focused");
             let isActive = true;
             const fetchTodo = async () => {
                 try {
@@ -46,9 +45,7 @@ const TodoDetail = ({navigation, route}) => {
                     const json = await JSON.parse(response);
                     if (isActive) {
                         console.log(json);
-                        console.log(typeof json[0].due, json[0].due)
                         setTodo(json[0]);
-                        setUpdatedTodo(json[0]); 
                     }
                 } catch (err) {
                     console.error(err);
@@ -57,6 +54,7 @@ const TodoDetail = ({navigation, route}) => {
             fetchTodo();
 
             return () => {
+                console.log("TODODETAIL: screen becomes unfocused");
                 isActive = false;
             };
         }, [])
@@ -64,12 +62,9 @@ const TodoDetail = ({navigation, route}) => {
 
     const handleUpdate = async function () {
         try {
-            console.log(updatedTodo);
-            // check if updatedTodo is not same as todo
-            const _ = await updateTodo(updatedTodo);
-            console.log('update successful');
-            // CalendarModule.updateCalendarEvent(updatedTodo);
-            setTodo(updatedTodo);
+            await updateTodo(todo);
+            const res = await todo.eventId ? await CalendarModule.updateCalendarEvent(todo): '';
+            console.log(res);
             setUpdateVisible(false);
         } catch (err) {
             console.log(err);
@@ -88,30 +83,26 @@ const TodoDetail = ({navigation, route}) => {
 
     const handleExport = async () => {
         console.log(todo);
-        console.log(todo.title, todo.description);
         try {
             const eventId = await CalendarModule.createCalendarEvent(todo.title, todo.description, todo.due);
-            // setUpdatedTodo({...updatedTodo, "eventId": eventId});
+            const localUpdatedTodo = {...todo, "eventId": eventId};
+            console.log('localUpdatedTodo', localUpdatedTodo);
+            const _ = await updateTodo(localUpdatedTodo);
+            setTodo(localUpdatedTodo);
         } catch (e) {
             console.log(e);
         }
-
     }
 
     const CustCheckBox = () => {
         return (
             <View style={styles.checkboxContainer}>
                 <CheckBox
-                    value={updatedTodo.completed ? updatedTodo.completed : false}
+                    value={todo.completed}
                     tintColors={{ true: '#F15927' }}
                     onValueChange={() => {
-                        let temp = !updatedTodo.completed;
-                        if (updatedTodo.completed){
-                            setUpdatedTodo({...updatedTodo, "completed": !updatedTodo.completed});
-                        } else {
-                            setUpdatedTodo({...updatedTodo, "completed": true});
-                        }
-                        setUpdateVisible(todo.completed != temp);
+                        setTodo({...todo, "completed": !todo.completed})
+                        setUpdateVisible(!isUpdateVisible);
                     }}
                     style={[globStyles.text]}
                 />
@@ -146,7 +137,6 @@ const TodoDetail = ({navigation, route}) => {
                     <View style={styles.buttonContainer}>
                         <Button color="#696969" onPress={handleUpdate} disabled= {!isUpdateVisible} title="Update" />
                     </View>
-
                 </View>
             </View>
         </View>
@@ -183,7 +173,7 @@ const styles = StyleSheet.create(
         buttonContainer: {
             marginHorizontal: 5,
             flex:1
-        }
+        },
     
     }
 );
