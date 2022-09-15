@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
-import {View, Text, StyleSheet, Button, Image, TouchableOpacity} from "react-native";
+import {View, Text, StyleSheet, Button, Image, TouchableOpacity, TextInput} from "react-native";
 import globStyles from '../Styles';
 import { useFocusEffect } from '@react-navigation/native';
 import { getTodoDetails, updateTodo, deleteTodo } from '../api/HandleTodo';
 import CheckBox from '@react-native-community/checkbox';
 import { NativeModules } from 'react-native';
+import {formatRelative} from "date-fns";
+import {locale} from "../locales/AddTodoLocale";
+import DatePicker from "react-native-date-picker";
+import {isTodoEqual} from "../models/TodoUtility";
+import _ from "lodash";
 const { CalendarModule } = NativeModules;
 
-const dateOptions = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-}
-
 const TodoDetail = ({navigation, route}) => {
-    const [todo, setTodo] = useState({});
-    const [isUpdateVisible, setUpdateVisible] = useState(false);
+    const [title, setTitle] = useState(""); // initialize state to the number of todos retreived
+    const [desc, setDesc] = useState("");
+    const [due, setDue] = useState(new Date());
+    const [urg, setUrg] = useState("");
+    const [comp, setComp] = useState(false);
+    const [eventId, setEventId] = useState(null);
+    const [isDatePickerOpen, setDatePickerOpen] = useState(false);
 
     React.useEffect(() => {
         navigation.setOptions({
@@ -26,14 +28,14 @@ const TodoDetail = ({navigation, route}) => {
                 <TouchableOpacity onPress={handleDelete} >
                     <Image source={require("../../assets/icons/delete.png")} style={globStyles.icon}/>
                 </TouchableOpacity>
-                    {!todo.eventId ?
+                    {!eventId ?
                 <TouchableOpacity onPress={handleExport}>
                     <Image source={require("../../assets/icons/exportcal.png")} style={globStyles.icon}/>
                 </TouchableOpacity> : ''}
                 </>
             ),
         });
-    }, [navigation, todo]);
+    }, [navigation, title, desc, due, urg, comp, eventId]);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -45,7 +47,13 @@ const TodoDetail = ({navigation, route}) => {
                     const json = await JSON.parse(response);
                     if (isActive) {
                         console.log(json);
-                        setTodo(json[0]);
+                        const todo = json[0];
+                        setTitle(todo.title);
+                        setDesc(todo.description);
+                        setDue(new Date(todo.due));
+                        setUrg(todo.urgency);
+                        setComp(todo.completed);
+                        setEventId(todo.eventId);
                     }
                 } catch (err) {
                     console.error(err);
@@ -60,12 +68,32 @@ const TodoDetail = ({navigation, route}) => {
         }, [])
     );
 
+    const createTodoFromData = () => {
+        const todo = {
+            "id": route.params.todoId,
+            "title": title,
+            "description" : desc,
+            "due": due.toISOString(),
+            "urgency": urg,
+            "completed": comp,
+            "eventId" : eventId
+        }
+        console.log('created todo', todo);
+        return todo;
+    }
+
     const handleUpdate = async function () {
+        const todo = createTodoFromData();
+        const origTodo = JSON.parse(await getTodoDetails(route.params.todoId))[0];
+        console.log("changed todo", todo, "orig todo", origTodo);
+        if (_.isEqual(todo,origTodo)) {
+            console.log("no change to todo");
+            return;
+        }
         try {
             await updateTodo(todo);
             const res = await todo.eventId ? await CalendarModule.updateCalendarEvent(todo): '';
             console.log(res);
-            setUpdateVisible(false);
         } catch (err) {
             console.log(err);
         }
@@ -73,7 +101,7 @@ const TodoDetail = ({navigation, route}) => {
 
     const handleDelete = async function () {
         try {
-            const _ = await deleteTodo(todo.id);
+            const _ = await deleteTodo(route.params.todoId);
             console.log('delete successful');
             navigation.goBack();
         } catch (err) {
@@ -82,64 +110,113 @@ const TodoDetail = ({navigation, route}) => {
     }
 
     const handleExport = async () => {
+        const todo = createTodoFromData();
         console.log(todo);
         try {
             const eventId = await CalendarModule.createCalendarEvent(todo.title, todo.description, todo.due);
             const localUpdatedTodo = {...todo, "eventId": eventId};
             console.log('localUpdatedTodo', localUpdatedTodo);
             const _ = await updateTodo(localUpdatedTodo);
-            setTodo(localUpdatedTodo);
+            setEventId(eventId);
         } catch (e) {
             console.log(e);
         }
     }
 
+    const toggleOverlay = () => {
+        setDatePickerOpen(!isDatePickerOpen);
+    }
+
     const CustCheckBox = () => {
         return (
-            <View style={styles.checkboxContainer}>
-                <CheckBox
-                    value={todo.completed}
+            <CheckBox
+                    value={comp}
                     tintColors={{ true: '#F15927' }}
                     onValueChange={() => {
-                        setTodo({...todo, "completed": !todo.completed})
-                        setUpdateVisible(!isUpdateVisible);
+                        setComp(!comp)
+                        // setUpdateVisible(!isUpdateVisible);
                     }}
                     style={[globStyles.text]}
                 />
-            </View>
         );
     }
 
     return (
         <View style={globStyles.mainContainer}>
-            <View style={styles.formContainer}>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Title:</Text>
-                    <Text style={styles.txtinput}>{todo.title}</Text>
-                </View>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Description:</Text>
-                    <Text style={[styles.txtinput, { maxWidth: '80%' }]}>{todo.description}</Text>
-                </View>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Due date:</Text>
-                    <Text style={styles.txtinput}>{new Date(todo.due).toLocaleString('en-US')}</Text>
-                </View>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Urgency:</Text>
-                    <Text style={styles.txtinput}>{todo.urgency}</Text>
-                </View>
-                <View style={styles.formField}>
-                    <Text style={styles.labels}>Completed:</Text>
-                    <CustCheckBox/>
-                </View>
-                <View style={styles.buttonRow}>
-                    <View style={styles.buttonContainer}>
-                        <Button color="#696969" onPress={handleUpdate} disabled= {!isUpdateVisible} title="Update" />
+                <View style={styles.formContainer}>
+                    <View style={styles.formFieldContainer}>
+                        <Text style={styles.fieldLabel}>Title:</Text>
+                        <View style={styles.txtinputContainer}>
+                            <Text style={styles.txtinputReadOnly}>{title}</Text>
+                        </View>
                     </View>
+
+                    <View style={styles.formFieldContainer}>
+                        <Text style={styles.fieldLabel}>Description:</Text>
+                        <View style={styles.txtinputContainer}>
+                            <TextInput
+                                multiline
+                                style={[styles.txtinput, { maxWidth: '80%' }]}
+                                onChangeText={desc => setDesc(desc)}
+                                value={desc}
+                                selectTextOnFocus={true}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.formFieldContainer}>
+                        <Text style={styles.fieldLabel}>Due date:</Text>
+                        <View style={styles.txtinputContainer}>
+                            <TouchableOpacity
+                                style={styles.button}
+                                onPress={toggleOverlay}
+                            >
+                                <Text style={styles.txtinput}>{formatRelative(new Date(due), new Date(), { locale })}</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <>
+                            <DatePicker
+                                modal
+                                open={isDatePickerOpen}
+                                date={due}
+                                onConfirm={(date) => {
+                                    setDatePickerOpen(false)
+                                    setDue(date)
+                                }}
+                                onCancel={() => {
+                                    setDatePickerOpen(false)
+                                }}
+                            />
+                        </>
+                    </View>
+
+                    <View style={styles.formFieldContainer}>
+                        <Text style={styles.fieldLabel}>Urgency:</Text>
+                        <View style={styles.txtinputContainer}>
+                            <TextInput
+                                style={styles.txtinput}
+                                onChangeText={urg => setUrg(urg)}
+                                value={urg}
+                                selectTextOnFocus={true}
+                            />
+                        </View>
+                    </View>
+                    <View style={styles.formFieldContainer}>
+                        <Text style={styles.fieldLabel}>Completed:</Text>
+                        <View style={styles.checkboxContainer}>
+                            <CustCheckBox/>
+                        </View>
+                    </View>
+                    <View style={styles.buttonRow}>
+                        <View style={styles.buttonContainer}>
+                            <Button color="#696969" onPress={handleUpdate} title="Update" />
+                        </View>
+                    </View>
+
+
                 </View>
+
             </View>
-        </View>
     );
 
 }
@@ -154,15 +231,6 @@ const styles = StyleSheet.create(
             paddingTop: 50
 
         },
-        formField: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start'
-        },
-        txtinput: {
-            marginLeft: 10,
-            color: 'black'
-        },
         buttonRow : {
             flex: 1,
             flexDirection: 'row',
@@ -174,6 +242,35 @@ const styles = StyleSheet.create(
             marginHorizontal: 5,
             flex:1
         },
+        formFieldContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingBottom: 20
+        },
+        txtinput: {
+            padding:0,
+            paddingLeft:5,
+            color: 'black'
+        },
+        txtinputReadOnly: {
+            padding: 5,
+            color: 'gray'
+        },
+        txtinputContainer: {
+            marginLeft: 10,
+            flex: 5,
+            backgroundColor: 'lightgrey',
+            borderRadius: 5,
+            borderBottomColor: 'black',
+            borderBottomWidth: StyleSheet.hairlineWidth
+        },
+        fieldLabel: {
+            flex: 2
+        },
+        checkboxContainer: {
+            flex: 5
+        }
     
     }
 );

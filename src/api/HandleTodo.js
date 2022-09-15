@@ -58,6 +58,7 @@ export async function getTodoDetails(todoId) {
     } catch (err) {
         console.log(err)
     }
+    console.log(todo);
     return JSON.stringify(todo);
 }
 
@@ -83,6 +84,7 @@ export function addNewTodo(todo) {
             const lastID = allTodos.todos[allTodos.todos.length - 1].id;
             todo['id'] = lastID+1;
             todo['completed'] = false;
+            todo['eventId'] = null;
 
             allTodos['todos'].push(todo);
             const newTodos = JSON.stringify(allTodos);
