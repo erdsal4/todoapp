@@ -12,12 +12,16 @@ import android.provider.CalendarContract;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
+
+import com.facebook.react.bridge.ActivityEventListener;
+import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 
 import java.time.Instant;
@@ -28,6 +32,21 @@ public class CalendarModule extends ReactContextBaseJavaModule {
     private static final String E_ACTIVITY_DOES_NOT_EXIST = "E_ACTIVITY_DOES_NOT_EXIST";
     private static final String E_FAILED_TO_INSERT_EVENT = "E_FAILED_TO_INSERT_EVENT";
     private static final String E_FAILED_TO_EDIT_EVENT = "E_FAILED_TO_EDIT_EVENT";
+    private static final int WEEKLY_VIEW_REQUEST = 1;
+    private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener(){
+        @Override
+        public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent intent) {
+            if (requestCode == WEEKLY_VIEW_REQUEST) {
+                int todoId = intent.getIntExtra("todoId", -1);
+                Log.d("CalendarModule", "weekly view pressed on todo with id " + todoId);
+                if (mCalendarPromise != null) {
+                    mCalendarPromise.resolve(todoId);
+                    mCalendarPromise = null;
+                }
+            }
+        }
+    };
+
     private Promise mCalendarPromise;
     private Instant mTimestamp;
     private Activity mCurrentActivity;
@@ -37,7 +56,10 @@ public class CalendarModule extends ReactContextBaseJavaModule {
     private String mTodoComp;
 
     CalendarModule(ReactApplicationContext context) {
+
         super(context);
+        context.addActivityEventListener(mActivityEventListener);
+
     }
 
     @Override
@@ -79,10 +101,8 @@ public class CalendarModule extends ReactContextBaseJavaModule {
                 try {
                     long eventID = insertEvent();
                     mCalendarPromise.resolve((double) eventID);
-                    mCalendarPromise = null;
                 } catch (Exception e) {
                     mCalendarPromise.reject(E_FAILED_TO_INSERT_EVENT, e);
-                    mCalendarPromise = null;
                 }
                 break;
             case "edit":
@@ -91,19 +111,23 @@ public class CalendarModule extends ReactContextBaseJavaModule {
                 try {
                     int rows = editEvent(eventId);
                     mCalendarPromise.resolve("Rows updated: " + rows);
-                    mCalendarPromise = null;
                 } catch (Exception e) {
                     mCalendarPromise.reject(E_FAILED_TO_EDIT_EVENT, e);
-                    mCalendarPromise = null;
                 }
+                break;
         }
-
+        mCalendarPromise = null;
     }
 
-    private static long getDefaultCalendarId(ContentResolver cr){
-        Cursor cursor = cr.query(CalendarContract.Calendars.CONTENT_URI, new String [] {CalendarContract.Calendars._ID,CalendarContract.Calendars.IS_PRIMARY}, CalendarContract.Calendars.IS_PRIMARY + " =1", null, CalendarContract.Calendars._ID);
-        cursor.moveToFirst();
-        return cursor.getLong(0);
+    @ReactMethod
+    public void showWeeklyView(ReadableArray sections, final Promise promise){
+        DataManager.getInstance().clearInstance();
+        DataManager.getInstance().writeSections(sections);
+        Log.i("CALENDAR_MODULE", sections.toString());
+        Activity currentActivity = getCurrentActivity();
+        Intent intent = new Intent(currentActivity, TodoListActivity.class);
+        mCalendarPromise = promise;
+        currentActivity.startActivityForResult(intent,WEEKLY_VIEW_REQUEST);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -121,7 +145,7 @@ public class CalendarModule extends ReactContextBaseJavaModule {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private long insertEvent() {
         ContentResolver cr = mCurrentActivity.getContentResolver();
-        long calId = getDefaultCalendarId(cr);
+        long calId = CalendarUtility.getDefaultCalendarId(cr);
         Log.d("CalendarModule", String.valueOf(calId));
         ContentValues values = new ContentValues();
         values.put(CalendarContract.Events.DTSTART, mTimestamp.toEpochMilli());

@@ -20,6 +20,16 @@ export const AddTodoButton = ({ onPress, title }) => {
     );
 }
 
+export const WeeklyViewButton = ({onPress}) => {
+    return(
+        <TouchableOpacity style={{padding: 5, alignSelf: 'flex-end', backgroundColor: 'white', borderColor: 'lightgray', borderWidth: 2}}
+                          onPress={onPress}>
+            <Text style={{fontWeight:'bold', fontSize: 15}}>Weekly View</Text>
+        </TouchableOpacity>
+    )
+}
+
+
 const styles = StyleSheet.create({
     markCompleteButtonContainer: {
         flex: 1,

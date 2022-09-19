@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { View } from "react-native";
+import {NativeModules, Text, TouchableOpacity, View} from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { formatRelative, parseISO } from 'date-fns';
 import {getCurrentTodos, markTodosComplete } from '../api/HandleTodo';
 import { locale, dateToString } from '../locales/TodosLocale';
 import { TodoList } from '../components/TodoList';
-import { MarkCompleteButton, AddTodoButton } from '../components/Buttons';
+import {MarkCompleteButton, AddTodoButton, WeeklyViewButton} from '../components/Buttons';
 import globStyles from '../Styles';
 var _ = require('lodash');
+const { CalendarModule } = NativeModules;
 
 import {CheckedContext} from '../CheckedContext.js';
 const TodoListMemo = React.memo(TodoList);
@@ -83,8 +84,18 @@ const Todos = ({ navigation }) => {
         }
     }
 
+    const handleWeeklyView = async () => {
+        try {
+            const todoId = await CalendarModule.showWeeklyView(sections);
+            navigation.navigate('TodoDetail', { "todoId": todoId });
+        } catch(er) {
+            console.log(er)
+        }
+    }
+
     return (
         <View style= {globStyles.mainContainer}>
+            <WeeklyViewButton onPress={handleWeeklyView}/>
             {checkedTodos.length != 0 ? <MarkCompleteButton handleMarkComplete={handleMarkComplete} /> : ''}
             <CheckedContext.Provider value={{ addChecked: addChecked, deleteChecked: deleteChecked }}>
                 <TodoListMemo memoSections={memoSections} navigation={navigation} />
